@@ -2,15 +2,19 @@ import pandas as pd
 import mlflow
 import mlflow.sklearn
 import os
+import dagshub
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, ConfusionMatrixDisplay
+from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
-# KOREKSI: Set tracking URI agar mlruns selalu berada di direktori aktif
+# Inisialisasi DagsHub (Ganti dengan username dan nama repo Anda)
+# dagshub.init(repo_owner='49il', repo_name='Workflow-CI', mlflow=True)
+
+# Set tracking URI agar mlruns tercipta di dalam folder MLProject
 mlflow.set_tracking_uri(f"file://{os.getcwd()}/mlruns")
 
-# Load dataset
+# 1. Load dataset
 df = pd.read_csv("heart_preprocessing.csv")
 
 X = df.drop("target", axis=1)
@@ -20,6 +24,7 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
+# 2. Hyperparameter Tuning
 param_grid = {
     "n_estimators": [50, 100],
     "max_depth": [3, 5, 10]
@@ -32,37 +37,51 @@ grid_search = GridSearchCV(
     scoring="accuracy"
 )
 
-# Environment untuk model artifact
+# 3. Definisi Environment (Sesuai Tips & Trik Dicoding)
 custom_env = {
     "name": "heart-env",
     "channels": ["conda-forge", "nodefaults"],
     "dependencies": [
-        "python=3.10",
+        "python=3.12.7",
         "pandas",
         "scikit-learn=1.5.2",
         "matplotlib",
         "pip",
-        {"pip": ["mlflow==2.19.0"]}
+        {"pip": [
+            "mlflow==2.19.0",
+            "setuptools",
+            "wheel"
+        ]}
     ]
 }
 
+# 4. Eksekusi Training & Logging
 with mlflow.start_run():
     grid_search.fit(X_train, y_train)
     best_model = grid_search.best_estimator_
     y_pred = best_model.predict(X_test)
 
-    # Logging Metrics
-    mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
-    
-    # Logging Model dengan environment aman
-    mlflow.sklearn.log_model(best_model, "random_forest_model", conda_env=custom_env)
+    # Log metrics
+    accuracy = accuracy_score(y_test, y_pred)
+    mlflow.log_metric("accuracy", accuracy)
+    mlflow.log_params(grid_search.best_params_)
 
-    # Logging Artifacts
+    # Log Model (Penting: artifact_path harus sama dengan yang di YAML)
+    mlflow.sklearn.log_model(
+        sk_model=best_model, 
+        artifact_path="random_forest_model", 
+        conda_env=custom_env
+    )
+
+    # Log Artifacts Tambahan (Syarat Advanced)
     report = classification_report(y_test, y_pred)
     with open("classification_report.txt", "w") as f:
         f.write(report)
     mlflow.log_artifact("classification_report.txt")
 
     ConfusionMatrixDisplay.from_predictions(y_test, y_pred)
+    plt.title(f"Random Forest Accuracy: {accuracy:.4f}")
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
+
+print("Training selesai dan model telah berhasil dicatat ke MLflow.")
