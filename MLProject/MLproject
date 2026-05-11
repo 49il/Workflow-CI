@@ -1,5 +1,6 @@
 name: heart-disease-prediction
 
+# Gunakan conda_env yang merujuk ke file conda.yaml Anda
 conda_env: conda.yaml
 
 entry_points:

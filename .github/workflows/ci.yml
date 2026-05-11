@@ -42,14 +42,11 @@ jobs:
       - name: Build & Push Docker Image menggunakan MLflow
         run: |
           cd MLProject
-          # Mengambil Run ID terbaru berdasarkan waktu modifikasi (-t)
+          # Ambil Run ID terbaru
           RUN_ID=$(ls -t mlruns/0 | grep -v "meta.yaml" | head -n 1)
           
-          # Build Docker menggunakan virtualenv untuk menghindari isu Conda ToS
+          # Gunakan virtualenv (ini standar MLOps untuk Docker)
           mlflow models build-docker \
             -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" \
             -n ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest \
             --env-manager=virtualenv
-
-          # Push image ke Docker Hub
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest

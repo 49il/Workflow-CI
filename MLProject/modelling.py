@@ -42,7 +42,7 @@ custom_env = {
     "name": "heart-env",
     "channels": ["conda-forge", "nodefaults"],
     "dependencies": [
-        "python=3.12.7",
+        "python=3.12.7",  
         "pandas",
         "scikit-learn=1.5.2",
         "matplotlib",
