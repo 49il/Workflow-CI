@@ -28,6 +28,20 @@ grid_search = GridSearchCV(
     scoring="accuracy"
 )
 
+# Definisikan environment secara eksplisit agar Docker tidak menggunakan default Anaconda
+custom_env = {
+    "name": "heart-env",
+    "channels": ["conda-forge", "nodefaults"],
+    "dependencies": [
+        "python=3.10",
+        "pandas",
+        "scikit-learn=1.5.2",
+        "matplotlib",
+        "pip",
+        {"pip": ["mlflow==2.19.0"]}
+    ]
+}
+
 with mlflow.start_run():
     grid_search.fit(X_train, y_train)
     best_model = grid_search.best_estimator_
@@ -46,7 +60,8 @@ with mlflow.start_run():
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("f1_score", f1)
 
-    mlflow.sklearn.log_model(best_model, "random_forest_model")
+    # Injeksi custom_env langsung ke dalam artefak model
+    mlflow.sklearn.log_model(best_model, "random_forest_model", conda_env=custom_env)
 
     report = classification_report(y_test, y_pred)
     with open("classification_report.txt", "w") as f:
