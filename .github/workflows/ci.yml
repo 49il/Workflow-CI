@@ -19,8 +19,9 @@ jobs:
           python-version: '3.12.7'
 
       - name: Install Dependencies
+        # Versi scikit-learn disamakan dengan environment
         run: |
-          pip install pandas scikit-learn==1.5.2 matplotlib mlflow==2.19.0 dagshub
+          pip install pandas scikit-learn==1.6.1 matplotlib mlflow==2.19.0
 
       - name: Run MLflow Project
         run: |
@@ -44,10 +45,11 @@ jobs:
           cd MLProject
           RUN_ID=$(ls -t mlruns/0 | grep -v "meta.yaml" | head -n 1)
           
-          # Build & Push
+          # Build menggunakan virtualenv untuk menghindari konflik base image
           mlflow models build-docker \
             -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" \
             -n ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest \
             --env-manager=virtualenv
 
+          # Eksekusi push ke Docker Hub
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest
