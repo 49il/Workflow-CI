@@ -45,11 +45,17 @@ jobs:
           cd MLProject
           RUN_ID=$(ls -t mlruns/0 | grep -v "meta.yaml" | head -n 1)
           
-          # Build menggunakan virtualenv untuk menghindari konflik base image
-          mlflow models build-docker \
+          echo "Tahap 1: Generate blueprint Dockerfile dari MLflow..."
+          mlflow models generate-dockerfile \
             -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" \
-            -n ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest \
+            -d build_dir \
             --env-manager=virtualenv
 
-          # Eksekusi push ke Docker Hub
+          echo "Tahap 2: Retas dan perbaiki link get-pip.py yang usang di dalam Dockerfile..."
+          sed -i 's|https://bootstrap.pypa.io/get-pip.py|https://bootstrap.pypa.io/pip/3.9/get-pip.py|g' build_dir/Dockerfile
+          
+          echo "Tahap 3: Build Docker Image secara manual dari blueprint yang sudah diperbaiki..."
+          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest build_dir
+          
+          echo "Tahap 4: Push Image ke Docker Hub..."
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest
