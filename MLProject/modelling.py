@@ -1,10 +1,14 @@
 import pandas as pd
 import mlflow
 import mlflow.sklearn
+import os
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+
+# KOREKSI: Set tracking URI agar mlruns selalu berada di direktori aktif
+mlflow.set_tracking_uri(f"file://{os.getcwd()}/mlruns")
 
 # Load dataset
 df = pd.read_csv("heart_preprocessing.csv")
@@ -28,7 +32,7 @@ grid_search = GridSearchCV(
     scoring="accuracy"
 )
 
-# Definisikan environment secara eksplisit agar Docker tidak menggunakan default Anaconda
+# Environment untuk model artifact
 custom_env = {
     "name": "heart-env",
     "channels": ["conda-forge", "nodefaults"],
@@ -47,22 +51,13 @@ with mlflow.start_run():
     best_model = grid_search.best_estimator_
     y_pred = best_model.predict(X_test)
 
-    accuracy = accuracy_score(y_test, y_pred)
-    precision = precision_score(y_test, y_pred)
-    recall = recall_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-
-    mlflow.log_param("best_n_estimators", grid_search.best_params_["n_estimators"])
-    mlflow.log_param("best_max_depth", grid_search.best_params_["max_depth"])
-
-    mlflow.log_metric("accuracy", accuracy)
-    mlflow.log_metric("precision", precision)
-    mlflow.log_metric("recall", recall)
-    mlflow.log_metric("f1_score", f1)
-
-    # Injeksi custom_env langsung ke dalam artefak model
+    # Logging Metrics
+    mlflow.log_metric("accuracy", accuracy_score(y_test, y_pred))
+    
+    # Logging Model dengan environment aman
     mlflow.sklearn.log_model(best_model, "random_forest_model", conda_env=custom_env)
 
+    # Logging Artifacts
     report = classification_report(y_test, y_pred)
     with open("classification_report.txt", "w") as f:
         f.write(report)
