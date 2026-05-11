@@ -45,8 +45,8 @@ jobs:
           # Mengambil Run ID terbaru yang digenerate oleh MLflow
           RUN_ID=$(ls mlruns/0 | grep -v meta.yaml | head -n 1)
           
-          # Membangun Docker Image dari model
-          mlflow models build-docker -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" -n 49il/heart-model:latest
+          # Membangun Docker Image dari model menggunakan Miniconda (Solusi Python 3.10)
+          mlflow models build-docker -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" -n 49il/heart-model:latest --env-manager=conda
           
           # Mendorong Image ke Docker Hub
           docker push 49il/heart-model:latest
