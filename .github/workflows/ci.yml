@@ -42,11 +42,12 @@ jobs:
       - name: Build & Push Docker Image menggunakan MLflow
         run: |
           cd MLProject
-          # Ambil Run ID terbaru
           RUN_ID=$(ls -t mlruns/0 | grep -v "meta.yaml" | head -n 1)
           
-          # Gunakan virtualenv (ini standar MLOps untuk Docker)
+          # Build & Push
           mlflow models build-docker \
             -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" \
             -n ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest \
             --env-manager=virtualenv
+
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest

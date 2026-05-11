@@ -8,13 +8,13 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
-# Inisialisasi DagsHub (Ganti dengan username dan nama repo Anda)
-# dagshub.init(repo_owner='49il', repo_name='Workflow-CI', mlflow=True)
+# Inisialisasi DagsHub sesuai link Anda
+dagshub.init(repo_owner='49il', repo_name='heart-mlflow', mlflow=True)
 
-# Set tracking URI agar mlruns tercipta di dalam folder MLProject
+# Set tracking URI
 mlflow.set_tracking_uri(f"file://{os.getcwd()}/mlruns")
 
-# 1. Load dataset
+# 1. Load dataset (Pastikan file ini ada di folder MLProject)
 df = pd.read_csv("heart_preprocessing.csv")
 
 X = df.drop("target", axis=1)
@@ -37,12 +37,12 @@ grid_search = GridSearchCV(
     scoring="accuracy"
 )
 
-# 3. Definisi Environment (Sesuai Tips & Trik Dicoding)
+# 3. Definisi Environment (Python 3.12.7 sesuai instruksi)
 custom_env = {
     "name": "heart-env",
     "channels": ["conda-forge", "nodefaults"],
     "dependencies": [
-        "python=3.12.7",  
+        "python=3.12.7",
         "pandas",
         "scikit-learn=1.5.2",
         "matplotlib",
@@ -66,14 +66,14 @@ with mlflow.start_run():
     mlflow.log_metric("accuracy", accuracy)
     mlflow.log_params(grid_search.best_params_)
 
-    # Log Model (Penting: artifact_path harus sama dengan yang di YAML)
+    # Log Model
     mlflow.sklearn.log_model(
         sk_model=best_model, 
         artifact_path="random_forest_model", 
         conda_env=custom_env
     )
 
-    # Log Artifacts Tambahan (Syarat Advanced)
+    # Log Artifacts (Syarat Advanced)
     report = classification_report(y_test, y_pred)
     with open("classification_report.txt", "w") as f:
         f.write(report)
@@ -84,4 +84,4 @@ with mlflow.start_run():
     plt.savefig("confusion_matrix.png")
     mlflow.log_artifact("confusion_matrix.png")
 
-print("Training selesai dan model telah berhasil dicatat ke MLflow.")
+print("Training selesai. Silakan cek DagsHub untuk melihat hasilnya.")
