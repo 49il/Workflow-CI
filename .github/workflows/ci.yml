@@ -42,11 +42,14 @@ jobs:
       - name: Build & Push Docker Image menggunakan MLflow
         run: |
           cd MLProject
-          # Mengambil Run ID terbaru yang digenerate oleh MLflow
-          RUN_ID=$(ls mlruns/0 | grep -v meta.yaml | head -n 1)
+          # Mengambil Run ID terbaru dengan lebih akurat
+          RUN_ID=$(ls -t mlruns/0 | grep -v "meta.yaml" | head -n 1)
           
-          # Membangun Docker Image dari model menggunakan Miniconda (Solusi Python 3.10)
-          mlflow models build-docker -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" -n 49il/heart-model:latest --env-manager=conda
+          # MENGGUNAKAN virtualenv untuk menghindari isu Conda ToS di CI/CD
+          mlflow models build-docker \
+            -m "mlruns/0/$RUN_ID/artifacts/random_forest_model" \
+            -n ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest \
+            --env-manager=virtualenv
           
-          # Mendorong Image ke Docker Hub
-          docker push 49il/heart-model:latest
+          # Mendorong Image menggunakan variabel secrets
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/heart-model:latest
